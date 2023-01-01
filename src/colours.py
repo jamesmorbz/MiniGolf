@@ -1,0 +1,12 @@
+class Colours:
+    Black = (0, 0, 0)
+    Blue = (0, 20, 50)
+    White = (255, 255, 255)
+    Red = (255, 0, 0)
+    Lightred = (255, 204, 203)
+    Green = (0, 255, 0)
+    Teal = (19,164,149)
+    LightBlue = (45,129,255)
+    Maroon = (128,0,64)
+    LightGreen = (0,196,0)
+    Grey = (147,147,147)
