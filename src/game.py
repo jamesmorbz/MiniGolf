@@ -1,5 +1,5 @@
 import pygame
-
+from src.levels import Levels
 class Game:
     def __init__(self):
         self.current_score: int = 0
@@ -10,7 +10,9 @@ class Game:
         self.next_level = 1
         self.putt_sound: pygame.mixer.Sound = pygame.mixer.Sound("data/sfx/golf_ball_hit.mp3")
         self.scorecard = {}
-
+        self.levels = Levels()
+        self.par_scores = self.levels.par_scores
+        
     def get_current_level(self):
         return self.current_level
 
@@ -23,7 +25,7 @@ class Game:
         self.next_level = self.highest_level_completed + 1
 
     def update_scorecard(self, level, shots):
-        self.scorecard[level] = shots
+        self.scorecard[str(level)] = shots
         self.current_score = sum(list(self.scorecard.values()))
 
     def check_if_level_unlocked(self, level):
