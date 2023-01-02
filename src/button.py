@@ -7,17 +7,22 @@ class Button():
         self.y = y
         self.width = width
         self.height = height
-        self.text = text
+        self.text_items: list[str] = [text]
         self.font: pygame.font.Font = font
+    
+    def add_text(self, text):
+        self.text_items.append(text)
 
-    def draw(self, win: pygame.Surface, outline=None):
-        if outline:
-            pygame.draw.rect(win, outline, (self.x-2,self.y-2,self.width+4,self.height+4),0)
-            
+    def draw(self, win: pygame.Surface): 
         pygame.draw.rect(win, self.color, (self.x,self.y,self.width,self.height),0)
 
-        text = self.font.render(self.text, 1, (0,0,0))
-        win.blit(text, (self.x + (self.width/2 - text.get_width()/2), self.y + 2))
+        for index, text in enumerate(self.text_items):
+            text: pygame.Surface = self.font.render(text, 1, (0,0,0))
+            if index > 0:
+                previous_text = self.font.render(self.text_items[index-1], 1, (0,0,0))
+                win.blit(text, (self.x + (self.width/2 - text.get_width()/2), self.y + 2 + previous_text.get_height()))
+            else:
+                win.blit(text, (self.x + (self.width/2 - text.get_width()/2), self.y + 2))
 
     def hover(self):
         mouse = pygame.mouse.get_pos()

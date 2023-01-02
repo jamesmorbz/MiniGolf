@@ -3,7 +3,9 @@ import sys
 from src.colours import Colours
 from src.button import Button
 from src.game import Game
-from pygame.locals import K_ESCAPE
+from pygame.locals import K_ESCAPE, MOUSEBUTTONDOWN
+import random
+
 def blit_buttons(buttons: list[Button], display: pygame.Surface):
         for button in buttons:
             button.draw(display)
@@ -37,38 +39,64 @@ class Scene():
         self.next_scene = None
 
 class LevelScene(Scene):
-    def __init__(self, screen, game):
+    def __init__(self, level, screen, game):
         super().__init__(screen)
         self.level_locked_text_showing = False
-        # self.music: pygame.mixer.Sound = pygame.mixer.Sound("data/sfx/game_music.mp3")
+        self.level_music: pygame.mixer.Sound = pygame.mixer.Sound("data/sfx/music.mp3")
+        self.swing_music: pygame.mixer.Sound = pygame.mixer.Sound("data/sfx/golf_ball_hit.mp3")
+        self.putt_music: pygame.mixer.Sound = pygame.mixer.Sound("data/sfx/inHole.wav")
         self.game_state: Game = game
-        self.clicked_level: str = None
-        # pygame.mixer.Sound.play(self.music)
-        # pygame.mixer.Sound.set_volume(self.music, 0.02)
+        self.level_complete: bool = False
+        self.level_name = level
+        self.ball_in_hole = False
+        self.shots = 0
+        pygame.mixer.Sound.play(self.level_music)
+        pygame.mixer.Sound.set_volume(self.level_music, 0.01)
 
     def process_input(self, events, pressed_keys):
         for event in events:
             if event.type == pygame.KEYDOWN:
                 if event.key == K_ESCAPE:
                     print("ESC Pressed!")
-                
+            if event.type == MOUSEBUTTONDOWN:
+                self.take_a_shot()
+
     def update(self):
-        pass
-            
+        if self.game_state.get_current_level() != self.level_name:
+            self.game_state.update_current_level(self.level_name)
+
+        if self.level_complete:
+            self.next_scene = MainMenuScene(self.screen, self.game_state)
+
+        if self.shots == 3:
+            self.completed_level()
+            self.level_complete = True
+
     def render(self):
         self.screen.fill(self.colours.Black)
        
+    def take_a_shot(self):
+        pygame.mixer.Sound.play(self.swing_music, fade_ms=1)
+        pygame.mixer.Sound.set_volume(self.swing_music, 0.02)
+        self.shots += 1
+
+    def completed_level(self):
+        pygame.mixer.Sound.play(self.putt_music)
+        pygame.mixer.Sound.set_volume(self.putt_music, 0.02)
+        self.game_state.update_last_completed_level(self.level_name)
+        self.game_state.update_scorecard(self.level_name, self.shots)
+        pygame.mixer.Sound.stop(self.level_music)
 
 class MainMenuScene(Scene):
     def __init__(self, screen, game):
         super().__init__(screen)
+        self.game_state: Game = game
         self.level_locked_text_showing = False
         self.menu_buttons = self.main_menu_buttons()
         self.music: pygame.mixer.Sound = pygame.mixer.Sound("data/sfx/main_menu_music.mp3")
-        self.game_state: Game = game
         self.clicked_level: str = None
         pygame.mixer.Sound.play(self.music)
-        pygame.mixer.Sound.set_volume(self.music, 0.02)
+        pygame.mixer.Sound.set_volume(self.music, 0.00)
 
     def process_input(self, events, pressed_keys):
         for event in events:
@@ -79,7 +107,7 @@ class MainMenuScene(Scene):
             self.clicked_level = check_buttons(self.menu_buttons)
             if self.clicked_level is not None:
                 if self.game_state.check_if_level_unlocked(self.clicked_level):
-                    self.next_scene = LevelScene(self.screen, self.game_state)
+                    self.next_scene = LevelScene(level = self.clicked_level, screen = self.screen, game = self.game_state )
                     pygame.mixer.Sound.stop(self.music)
                 else:
                     self.level_locked_text_showing = True
@@ -95,6 +123,8 @@ class MainMenuScene(Scene):
     def render(self):
         self.screen.fill(self.colours.LightGreen)
         blit_buttons(self.menu_buttons, self.screen)
+        current_score = self.font.render(f"Current Score: {self.game_state.current_score}", True, self.colours.White)
+        self.screen.blit(current_score, (0, self.screen_height - current_score.get_height()))
 
         if self.level_locked_text_showing:
             self.update_alert_text()
@@ -121,11 +151,16 @@ class MainMenuScene(Scene):
         spacing_height = (area_height - number_of_rows * button_height) / number_of_rows 
 
         for i in range(number_of_holes):
+            level_name = i+1
             nth_button = i % buttons_in_row
             button_row = i // buttons_in_row
             button_x = padding_width + ((nth_button + 1) * spacing_width + nth_button * button_width)
             button_y = padding_height + ((button_row) * spacing_height + button_row * button_height)
-            button = Button(i+1, self.colours.Grey, button_x, button_y, button_width, button_height, f"Level {i+1}", self.font) 
+            button = Button(level_name, self.colours.Grey, button_x, button_y, button_width, button_height, f"Level {level_name}", self.font) 
+            current_score = self.game_state.scorecard.get(level_name)
+
+            if current_score is not None:
+                button.add_text(str(current_score))
             buttons.append(button)
 
         return buttons

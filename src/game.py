@@ -9,17 +9,22 @@ class Game:
         self.highest_level_completed = 0 
         self.next_level = 1
         self.putt_sound: pygame.mixer.Sound = pygame.mixer.Sound("data/sfx/golf_ball_hit.mp3")
-        
-    def completed_level(self, score):
-        pygame.mixer.Sound.play(self.putt_sound)
-        self.last_completed_level = self.current_level
-        self.highest_level_completed = max(self.highest_level_completed, self.last_completed_level)
-        self.next_level = self.highest_level_completed + 1
-        pygame.mixer.Sound.stop(self.putt_sound)
+        self.scorecard = {}
 
-    def take_a_shot(self):
-        pygame.mixer.Sound.play(self.putt_sound, fade_ms=1)
-        self.current_score += 1
+    def get_current_level(self):
+        return self.current_level
+
+    def update_current_level(self, level):
+        self.current_level = level
+    
+    def update_last_completed_level(self, level):
+        self.last_completed_level = level
+        self.highest_level_completed = max(self.highest_level_completed, level)
+        self.next_level = self.highest_level_completed + 1
+
+    def update_scorecard(self, level, shots):
+        self.scorecard[level] = shots
+        self.current_score = sum(list(self.scorecard.values()))
 
     def check_if_level_unlocked(self, level):
         if level > self.next_level:
@@ -27,7 +32,7 @@ class Game:
         else:
             return True
 
-    def displayScore(self, stroke, par):  # Using proper golf terminology display score
+    def displayScore(self, stroke, par):
         if stroke == 0:
             text = "Skipped"
         elif stroke == par - 4:

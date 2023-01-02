@@ -19,6 +19,5 @@ def main():
 
 if __name__ == "__main__":
     pygame.init()
-    pygame.mixer.find_channel().set_volume(0.02)
     clock = pygame.time.Clock()
     main()
