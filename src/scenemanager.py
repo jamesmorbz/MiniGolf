@@ -4,8 +4,8 @@ import src.game as Game
 import sys
 
 class SceneManager():
-    def __init__(self, display: pygame.Surface, game: Game, framerate:int = None):
-        self.active_scene = Scene.MainMenuScene(display, game)
+    def __init__(self, screen: pygame.Surface, game: Game, framerate:int = None):
+        self.active_scene = Scene.MainMenuScene(screen, game)
         self.clock = pygame.time.Clock()
         self.framerate = framerate if framerate else 60
         self.running = True

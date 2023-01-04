@@ -7,12 +7,12 @@ number_of_holes = 18
     
 def main():
 
-    display = pygame.display.set_mode((screen_width, screen_height))
+    screen = pygame.display.set_mode((screen_width, screen_height))
     pygame.display.set_caption("Mini Golf")
     pygame.display.set_icon(pygame.image.load("data/gfx/putter.jpg"))
 
     game = Game()
-    scene_manager = SceneManager(display, game)
+    scene_manager = SceneManager(screen, game)
 
     while True:
         scene_manager.run()

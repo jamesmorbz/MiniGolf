@@ -4,6 +4,7 @@ from src.button import Button
 from src.game import Game
 from pygame.locals import K_ESCAPE, MOUSEBUTTONDOWN, K_SPACE
 import math
+import sys
 
 class Scene():
     def __init__(self, screen):
@@ -13,7 +14,8 @@ class Scene():
         self.user_event = pygame.USEREVENT + 1
         self.colours = Colours()
         self.font = pygame.font.SysFont("comicsansms", 12)
-
+        pygame.event.clear()
+        
     def process_input(self, events, pressed_keys):
         raise NotImplementedError
     
@@ -42,7 +44,7 @@ class ScorecardScene(Scene):
                 if event.key == K_ESCAPE:
                     print("ESC Pressed!")
                 if event.key == K_SPACE:
-                    self.next_scene = MainMenuScene(self.screen, self.game_state)
+                    self.next_scene = LevelSelectScene(self.screen, self.game_state)
     
     def update(self):
         pass
@@ -97,6 +99,49 @@ class ScorecardScene(Scene):
     def terminate(self):
         self.next_scene = None
 
+class MainMenuScene(Scene):
+    def __init__(self, screen, game):
+        super().__init__(screen)
+        self.menu_buttons: list[Button] = []
+        self.game_state: Game  = game
+        self.load_buttons()
+
+    def load_buttons(self):
+        self.menu_buttons.append(Button("start", Colours.Green, 100,300,150,100, "Start", self.font, text_position = "middle"))
+        self.menu_buttons.append(Button("quit", Colours.Red, self.screen_width-90,0,90,50, "Quit", self.font, text_position = "middle"))
+        self.menu_buttons.append(Button("options", Colours.LightBlue, 390,300,150,100, "Options", self.font, text_position = "middle"))
+
+    def process_input(self, events, pressed_keys):
+        pass
+    
+    def update(self):
+        if any(pygame.mouse.get_pressed()):
+            self.clicked_button = self.check_buttons()
+            if self.clicked_button == "start":
+                self.next_scene = LevelSelectScene(self.screen, self.game_state)
+            elif self.clicked_button == "quit":
+                pygame.quit()
+                sys.exit()
+                
+    
+    def render(self):
+        self.screen.fill(self.colours.Grey)
+        self.blit_buttons()
+
+    def terminate(self):
+        self.next_scene = None
+
+    def blit_buttons(self):
+        for button in self.menu_buttons:
+            button.draw(self.screen)
+    
+    def check_buttons(self):
+        for button in self.menu_buttons:
+            if button.hover():
+                return button.button_id
+        else:
+            return None
+
 class LevelScene(Scene):
     def __init__(self, level, screen, game):
         super().__init__(screen)
@@ -146,7 +191,7 @@ class LevelScene(Scene):
             score_text = self.font.render(self.displayScore(), True, self.colours.White)
             self.screen.blit(score_text, ((self.screen_width - score_text.get_width())/2, (self.screen_height - score_text.get_height())/2))
             pygame.display.update()
-            pygame.time.wait(1000)
+            pygame.time.delay(1000)
             self.next_scene = ScorecardScene(self.screen, self.game_state)
 
         if self.ball.colliderect(self.hole):
@@ -184,7 +229,7 @@ class LevelScene(Scene):
         pygame.mixer.Sound.stop(self.level_music)
     
     def displayScore(self):
-        if self.shots == 1:
+        if self.shots == 1 and self.par != 1:
             text = "Hole in 1!"
         elif self.shots == self.par - 4:
             text = "Condor!"
@@ -215,7 +260,7 @@ class LevelScene(Scene):
         # self.arrow_sprite = pygame.transform.rotate(self.arrow_sprite, 360-angle)
         # self.arrow_location = (self.ball_position)
 
-class MainMenuScene(Scene):
+class LevelSelectScene(Scene):
     def __init__(self, screen, game):
         super().__init__(screen)
         self.game_state: Game = game
@@ -231,6 +276,7 @@ class MainMenuScene(Scene):
             if event.type == self.user_event:
                 self.level_locked_text_showing = False
 
+    def update(self):
         if any(pygame.mouse.get_pressed()):
             self.clicked_level = self.check_buttons()
             if self.clicked_level is not None:
@@ -240,9 +286,6 @@ class MainMenuScene(Scene):
                 else:
                     self.level_locked_text_showing = True
                     pygame.time.set_timer(self.user_event, 1000, 1)
-
-    def update(self):
-        pass
     
     def update_alert_text(self):
         if self.clicked_level is not None:
