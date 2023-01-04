@@ -3,6 +3,7 @@ from src.colours import Colours
 from src.button import Button
 from src.game import Game
 from pygame.locals import K_ESCAPE, MOUSEBUTTONDOWN, K_SPACE
+import math
 
 class Scene():
     def __init__(self, screen):
@@ -103,13 +104,31 @@ class LevelScene(Scene):
         self.level_music: pygame.mixer.Sound = pygame.mixer.Sound("data/sfx/music.mp3")
         self.swing_music: pygame.mixer.Sound = pygame.mixer.Sound("data/sfx/golf_ball_hit.mp3")
         self.putt_music: pygame.mixer.Sound = pygame.mixer.Sound("data/sfx/inHole.wav")
+
+        # self.arrow_sprite: pygame.image = pygame.image.load("data/gfx/logo.png")
+        # self.arrow_sprite: pygame.image = pygame.transform.scale(self.arrow_sprite, (30, 100))
         self.game_state: Game = game
         self.level_complete: bool = False
         self.level_name = level
         self.ball_in_hole = False
+        self.ball_moving = False
         self.shots = 0
+        self.par = self.game_state.par_scores.get(str(level))
+        self.par_text = self.font.render(f"Par: {self.par}", True, self.colours.White)
+        self.load_level()
         pygame.mixer.Sound.play(self.level_music)
         pygame.mixer.Sound.set_volume(self.level_music, 0.01)
+    
+    def load_level(self):
+        self.ball_width = 5
+        self.hole_width = 10
+
+        self.ball_position = (100,100)
+        self.hole_position = (400,100)
+        self.ball = pygame.draw.circle(self.screen, (0,0,0), self.ball_position, self.ball_width)
+        self.hole = pygame.draw.circle(self.screen, (255,255,255), self.hole_position, self.hole_width)
+        
+        # self.arrow_location = (100,100)
 
     def process_input(self, events, pressed_keys):
         for event in events:
@@ -124,19 +143,38 @@ class LevelScene(Scene):
             self.game_state.update_current_level(self.level_name)
 
         if self.level_complete:
+            score_text = self.font.render(self.displayScore(), True, self.colours.White)
+            self.screen.blit(score_text, ((self.screen_width - score_text.get_width())/2, (self.screen_height - score_text.get_height())/2))
+            pygame.display.update()
+            pygame.time.wait(1000)
             self.next_scene = ScorecardScene(self.screen, self.game_state)
 
-        if self.shots == 3:
+        if self.ball.colliderect(self.hole):
             self.completed_level()
             self.level_complete = True
 
     def render(self):
-        self.screen.fill(self.colours.Black)
+        self.screen.fill(self.colours.LightGreen)
+
+        self.screen.blit(self.par_text, (10, 10))
+
+        self.hole = pygame.draw.circle(self.screen, (255,255,255), self.hole_position, self.hole_width)
+
+        self.ball = pygame.draw.circle(self.screen, (0,0,0), self.ball_position, self.ball_width)
+        # self.screen.blit(self.arrow_sprite, (self.arrow_location))
 
     def take_a_shot(self):
-        pygame.mixer.Sound.play(self.swing_music, fade_ms=1)
-        pygame.mixer.Sound.set_volume(self.swing_music, 0.02)
-        self.shots += 1
+        if not self.ball_moving:
+            self.ball_moving = True
+            pygame.mixer.Sound.play(self.swing_music, fade_ms=1)
+            pygame.mixer.Sound.set_volume(self.swing_music, 0.02)
+            self.shots += 1
+            self.update_ball()
+    
+    def update_ball(self):
+        mouse_x, mouse_y = pygame.mouse.get_pos()
+        self.ball_position = mouse_x, mouse_y
+        self.ball_moving = False
 
     def completed_level(self):
         pygame.mixer.Sound.play(self.putt_music)
@@ -144,6 +182,38 @@ class LevelScene(Scene):
         self.game_state.update_last_completed_level(self.level_name)
         self.game_state.update_scorecard(self.level_name, self.shots)
         pygame.mixer.Sound.stop(self.level_music)
+    
+    def displayScore(self):
+        if self.shots == 1:
+            text = "Hole in 1!"
+        elif self.shots == self.par - 4:
+            text = "Condor!"
+        elif self.shots == self.par - 3:
+            text = "Albatross!"
+        elif self.shots == self.par - 2:
+            text = "Eagle!"
+        elif self.shots == self.par - 1:
+            text = "Birdie!"
+        elif self.shots == self.par:
+            text = "Par"
+        elif self.shots == self.par + 1:
+            text = "Bogey :("
+        elif self.shots == self.par + 2:
+            text = "Double Bogey :("
+        elif self.shots == self.par + 3:
+            text = "Triple Bogey :("
+        else:
+            text = f"+{(self.shots - self.par)} :("
+
+        return text
+
+    def get_player_pos(self):
+        mouse_x, mouse_y = pygame.mouse.get_pos()
+        self.ball_position = mouse_x, mouse_y
+        # ball_x, ball_y = self.ball_position
+        # angle = (math.atan2(mouse_y-(ball_y),mouse_x-(ball_x))) * (180/math.pi)
+        # self.arrow_sprite = pygame.transform.rotate(self.arrow_sprite, 360-angle)
+        # self.arrow_location = (self.ball_position)
 
 class MainMenuScene(Scene):
     def __init__(self, screen, game):

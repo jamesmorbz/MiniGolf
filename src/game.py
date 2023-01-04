@@ -12,6 +12,7 @@ class Game:
         self.scorecard = {}
         self.levels = Levels()
         self.par_scores = self.levels.par_scores
+        self.par_strokes = sum(list(self.levels.par_scores.values()))
         
     def get_current_level(self):
         return self.current_level
@@ -33,28 +34,6 @@ class Game:
             return False
         else:
             return True
-
-    def displayScore(self, stroke, par):
-        if stroke == 0:
-            text = "Skipped"
-        elif stroke == par - 4:
-            text = "-4!"
-        elif stroke == par - 3:
-            text = "Albatross!"
-        elif stroke == par - 2:
-            text = "Eagle!"
-        elif stroke == par - 1:
-            text = "Birdie!"
-        elif stroke == par:
-            text = "Par"
-        elif stroke == par + 1:
-            text = "Bogey :("
-        elif stroke == par + 2:
-            text = "Double Bogey :("
-        elif stroke == par + 3:
-            text = "Triple Bogey :("
-        else:
-            text = "+ " + str(stroke - par) + " :("
 
 
     
